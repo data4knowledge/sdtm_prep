@@ -1,0 +1,5 @@
+pyyaml
+neo4j
+stringcase
+python-dotenv
+requests

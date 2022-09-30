@@ -18,9 +18,9 @@ relationships = {
 delete_dir("load_data")
 
 ns_s_json = RaService().namespace_by_name("d4k SDTM namespace")
-#print(ns_s_json)
+print(ns_s_json)
 ra_s_json = RaService().registration_authority_by_namespace_uuid(ns_s_json['uuid'])
-#print(ra_s_json)
+print(ra_s_json)
 
 # Get API key. Uses an environment variable.
 API_KEY = os.getenv('CDISC_API_KEY')
@@ -33,7 +33,8 @@ ig_body = response.json()
 
 # Process IG
 base_uri = ns_s_json['value']
-ig_uri, uri_name = instance_uri(base_uri, ig_body['label'])
+print("BASE_URI", base_uri)
+ig_uri = extend_uri(base_uri, "ig")
 nodes["ImplementationGuide"].append({"name": ig_body['label'], "uri": ig_uri, "uuid": uuid4() })
 add_identifier_and_status(ig_uri, "SDTM IG", "2022-09-01", ns_s_json['uri'], ra_s_json['uri'], nodes, relationships)
 
@@ -46,18 +47,30 @@ for ds in ig_body['_links']['datasets']:
     response = requests.get(api_url, headers=headers)
     ds_body = response.json()
     domain = ds_body['name']
+    print("Domain:", domain)
 
     # Process the dataset
     domain_uri = extend_uri(ig_uri, domain)
-    record = { 'label': ds_body['label'], 'name': ds_body['name'], 'structure': ds_body['datasetStructure'], 'ordinal': ds_body['ordinal'] }
+    record = { 
+      'uri': domain_uri,
+      'uuid': uuid4(),
+      'label': ds_body['label'], 
+      'name': ds_body['name'], 
+      'structure': ds_body['datasetStructure'], 
+      'ordinal': ds_body['ordinal'] 
+    }
     if 'description' in ds:
       record['description'] = ds_body['description']
     else:
       record['description'] = ds_body['label']
+    nodes["Domain"].append(record)
+    relationships["HAS_DOMAIN"].append({"from": ig_uri, "to": domain_uri})
     for item in ds_body['datasetVariables']:
       try:
         variable_uri = extend_uri(domain_uri, item['name'])
         record = { 
+          'uri': variable_uri,
+          'uuid': uuid4(),
           'label': item['label'], 
           'name': item['name'], 
           'structure': ds_body['datasetStructure'], 
@@ -66,32 +79,36 @@ for ds in ig_body['_links']['datasets']:
           'data_type': item['simpleDatatype'], 
           'role': item['role'], 
           'core': item['core'],
-          'value_domain': ''
+          'value_domain': '',
+          'code_list': '',
         }
         if 'describedValueDomain' in item:
           record['value_domain'] = item['describedValueDomain']
-        if 'codelist' in item['_links']:
+        # if 'codelist' in item['_links']:
             
-            # Horrid nasty fix to save time. Don't query the API to get the identifier of the linked codelist.
-            # Assume the URL last part is the C code. Terrible I know but life it too short.
-            parts = item['_links']['codelist'][0]['href'].split('/')
-            identifier = parts[-1]
+        #     # Horrid nasty fix to save time. Don't query the API to get the identifier of the linked codelist.
+        #     # Assume the URL last part is the C code. Terrible I know but life it too short.
+        #     parts = item['_links']['codelist'][0]['href'].split('/')
+        #     identifier = parts[-1]
 
-            # The proper way to get the identifier, two API calls
-            #api_url = "https://api.library.cdisc.org/api%s" % (item['_links']['codelist'][0]['href'])
-            #cl_response = requests.get(api_url, headers=headers)
-            #cl_body = cl_response.json()
-            #api_url = "https://api.library.cdisc.org/api%s" % (cl_body['_links']['versioschema_ns'][-1]['href'])
-            #clv_response = requests.get(api_url, headers=headers)
-            #clv_body = clv_response.json()
-            #identifier = clv_body['conceptId']
+        #     # The proper way to get the identifier, two API calls
+        #     #api_url = "https://api.library.cdisc.org/api%s" % (item['_links']['codelist'][0]['href'])
+        #     #cl_response = requests.get(api_url, headers=headers)
+        #     #cl_body = cl_response.json()
+        #     #api_url = "https://api.library.cdisc.org/api%s" % (cl_body['_links']['versioschema_ns'][-1]['href'])
+        #     #clv_response = requests.get(api_url, headers=headers)
+        #     #clv_body = clv_response.json()
+        #     #identifier = clv_body['conceptId']
 
-            # Need a CT search here
-            # Now link the code list in if we can find it.
-            #print(identifier)
-            #for triple in ct.triples((None, DC.identifier, Literal(identifier))):
-            #    g.add((variable, URIRef("%scodeList" % (schema_ns)), triple[0]))
-          
+        #     # Need a CT search here
+        #     # Now link the code list in if we can find it.
+        #     #print(identifier)
+        #     #for triple in ct.triples((None, DC.identifier, Literal(identifier))):
+        #     #    g.add((variable, URIRef("%scodeList" % (schema_ns)), triple[0]))
+        nodes["Variable"].append(record)
+        relationships["HAS_VARIABLE"].append({"from": domain_uri, "to": variable_uri})
+
+
       except:
         print("********** VARIABLE ***********")
         print(item)

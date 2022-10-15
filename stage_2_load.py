@@ -27,8 +27,14 @@ def file_load(driver, database):
   query = """CALL apoc.import.csv( [%s], [%s], {stringIds: false})""" % (", ".join(nodes), ", ".join(relationships))
   result = session.run(query)
   for record in result:
-    print(record)
+    #print(record)
     return_value = {'nodes': record['nodes'], 'relationships': record['relationships'], 'time': record['time']}
+  query = """
+    MATCH (n:Domain)-[]->(m:Variable)
+    set n.ordinal = toInteger(n.ordinal)
+    set m.ordinal = toInteger(m.ordinal)
+  """
+  result = session.run(query)
   driver.close()
   return return_value
 

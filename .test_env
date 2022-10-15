@@ -1,0 +1,4 @@
+TEST_NEO4J_URL="bolt://localhost:7687"
+TEST_NEO4J_DB_NAME="neo4j"
+TEST_NEO4J_USER="neo4j"
+TEST_NEO4J_PWD="cdisc"

@@ -17,7 +17,6 @@ class ServiceEnvironment():
     if full_name in os.environ:
       return os.environ[full_name]
     else:
-      print("ENV GET: Missing")
       return ""
 
   def build_full_name(self, name):

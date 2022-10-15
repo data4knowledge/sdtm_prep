@@ -64,6 +64,7 @@ for ds in ig_body['_links']['datasets']:
     else:
       record['description'] = ds_body['label']
     nodes["Domain"].append(record)
+    add_identifier_and_status(domain_uri, "SDTM %s" % (domain), "2022-09-01", ns_s_json['uri'], ra_s_json['uri'], nodes, relationships)
     relationships["HAS_DOMAIN"].append({"from": ig_uri, "to": domain_uri})
     for item in ds_body['datasetVariables']:
       try:

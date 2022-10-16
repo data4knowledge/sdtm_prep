@@ -1,4 +1,5 @@
 DEVELOPMENT_RA_SERVER_URL="http://localhost:8010/"
+DEVELOPMENT_CT_SERVER_URL="http://localhost:8012/"
 DEVELOPMENT_NEO4J_URL="bolt://localhost:7687"
 DEVELOPMENT_NEO4J_DB_NAME="sdtm-service-dev"
 DEVELOPMENT_NEO4J_USER="neo4j"

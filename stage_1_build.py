@@ -17,10 +17,12 @@ relationships = {
 
 delete_dir("load_data")
 
+# Namespace and RA
 ns_s_json = RaService().namespace_by_name("d4k SDTM namespace")
-print(ns_s_json)
 ra_s_json = RaService().registration_authority_by_namespace_uuid(ns_s_json['uuid'])
-print(ra_s_json)
+
+# CT Service API
+ct_service = CTService()
 
 # Get API key. Uses an environment variable.
 API_KEY = os.getenv('CDISC_API_KEY')
@@ -82,33 +84,19 @@ for ds in ig_body['_links']['datasets']:
           'core': item['core'],
           'value_domain': '',
           'code_list': '',
+          'code_list_uri': '',
         }
         if 'describedValueDomain' in item:
           record['value_domain'] = item['describedValueDomain']
-        # if 'codelist' in item['_links']:
-            
-        #     # Horrid nasty fix to save time. Don't query the API to get the identifier of the linked codelist.
-        #     # Assume the URL last part is the C code. Terrible I know but life it too short.
-        #     parts = item['_links']['codelist'][0]['href'].split('/')
-        #     identifier = parts[-1]
+        if 'codelist' in item['_links']:
+          parts = item['_links']['codelist'][0]['href'].split('/')
+          identifier = parts[-1]
+          cl = ct_service.get_cl(identifier)
+          record['code_list'] = identifier
+          record['code_list_uri'] = cl['uri']
 
-        #     # The proper way to get the identifier, two API calls
-        #     #api_url = "https://api.library.cdisc.org/api%s" % (item['_links']['codelist'][0]['href'])
-        #     #cl_response = requests.get(api_url, headers=headers)
-        #     #cl_body = cl_response.json()
-        #     #api_url = "https://api.library.cdisc.org/api%s" % (cl_body['_links']['versioschema_ns'][-1]['href'])
-        #     #clv_response = requests.get(api_url, headers=headers)
-        #     #clv_body = clv_response.json()
-        #     #identifier = clv_body['conceptId']
-
-        #     # Need a CT search here
-        #     # Now link the code list in if we can find it.
-        #     #print(identifier)
-        #     #for triple in ct.triples((None, DC.identifier, Literal(identifier))):
-        #     #    g.add((variable, URIRef("%scodeList" % (schema_ns)), triple[0]))
         nodes["Variable"].append(record)
         relationships["HAS_VARIABLE"].append({"from": domain_uri, "to": variable_uri})
-
 
       except:
         print("********** VARIABLE ***********")

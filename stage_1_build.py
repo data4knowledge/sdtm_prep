@@ -24,6 +24,8 @@ bc_set = {}
 delete_dir("load_data")
 
 bc_service = BCService()
+crm_service = CRMService()
+
 with open("source_data//bc_crm.yaml") as file:
   root = yaml.load(file, Loader=yaml.FullLoader)
   print("ROOT:", root)
@@ -46,7 +48,10 @@ with open("source_data//bc_crm.yaml") as file:
           bc_variable_map[domain][variable_name] = bc_name
         else:
           print("***** Missing BC reference %s for %s *****" % (bc_name, variable_name))
-
+        if "canonical" in variable:
+          for ref in variable["canonical"]:
+            uri = crm_service.leaf(ref['node'], ref['data_type'], ref['property'])
+            print("CRM:", uri)
     #elif "class" in item:
 print("BC DOMAIN MAP:", bc_domain_map)
 print("BC VARIABLE MAP:", bc_variable_map)

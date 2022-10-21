@@ -4,18 +4,43 @@ from utility.utility import *
 from utility.ra_service import *
 from utility.crm_service import *
 from utility.ct_service import *
+from utility.bc_service import *
 from stringcase import pascalcase, snakecase
+import yaml
 
 nodes = { 
   "ImplementationGuide": [], "Domain": [], "Variable": [], 
-  'ScopedIdentifier': [], 'Namespace': [], 'RegistrationStatus': [], 'RegistrationAuthority': [] 
+  'ScopedIdentifier': [], 'Namespace': [], 'RegistrationStatus': [], 'RegistrationAuthority': [], 'BiomedicalConceptRef': [] 
 }
 relationships = { 
-  "HAS_DOMAIN": [], "HAS_VARIABLE": [], 
+  "HAS_DOMAIN": [], "HAS_VARIABLE": [], "USING_BC": [],
   "IDENTIFIED_BY": [], "HAS_STATUS": [], "SCOPED_BY": [], "MANAGED_BY": [],
 }
 
+bc_domain_map = {}
+bc_set = {}
+
 delete_dir("load_data")
+
+bc_service = BCService()
+with open("source_data//bc_crm.yaml") as file:
+  root = yaml.load(file, Loader=yaml.FullLoader)
+  print("ROOT:", root)
+  for item in root["root"]:
+    print("ITEM:", item)
+    if "domain" in item:
+      domain = item['domain']
+      if not domain in bc_domain_map:
+        bc_domain_map[domain] = []
+      for name in item["bcs"]:
+        bc = bc_service.biomedical_concept(name)
+        bc_domain_map[domain].append(name)
+        bc_set[name] = bc['items'][0]['uri']
+    #elif "class" in item:
+print("BC DOMAIN MAP:", bc_domain_map)
+print("BC SET:", bc_set)
+for name, uri in bc_set.items():
+  nodes["BiomedicalConceptRef"].append({"name": name, "uri_reference": uri, "uuid": uuid4() })
 
 # Namespace and RA
 ns_s_json = RaService().namespace_by_name("d4k SDTM namespace")
@@ -61,6 +86,10 @@ for ds in ig_body['_links']['datasets']:
       'structure': ds_body['datasetStructure'], 
       'ordinal': ds_body['ordinal'] 
     }
+    if domain in bc_domain_map:
+      for bc in bc_domain_map[domain]:
+        uri = bc_set[bc]
+        relationships["USING_BC"].append({"from": domain_uri, "to": uri})
     if 'description' in ds:
       record['description'] = ds_body['description']
     else:

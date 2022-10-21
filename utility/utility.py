@@ -57,6 +57,8 @@ def write_nodes(the_data, csv_filename, id_field="id:ID"):
       row[id_field] = id_number
       if 'uri' in row:
         uri_and_uuid_to_id[row["uri"]] = id_number
+      if 'uri_reference' in row:
+        uri_and_uuid_to_id[row["uri_reference"]] = id_number
       if 'uuid' in row:
         uri_and_uuid_to_id[row["uuid"]] = id_number
       id_number += 1

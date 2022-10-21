@@ -1,3 +1,5 @@
 "id:ID","name","uri_reference","uuid"
-"2238","Age","https://bc.d4k.dk/bc_instance/age","76443b8a-95d4-485f-a164-575cbb351185"
-"2239","Sex","https://bc.d4k.dk/bc_instance/sex","fccc335b-da62-4ba6-a94a-45c68c139e71"
+"2238","Age","https://bc.d4k.dk/bc_instance/age","3ffc77bf-a04c-4a21-b977-280b5511d053"
+"2239","Sex","https://bc.d4k.dk/bc_instance/sex","ea1e1470-4860-409c-8b06-17f15aafc883"
+"2240","Ethnicity","https://bc.d4k.dk/bc_instance/ethnicity","84cf9701-28b8-423c-96ba-52fb51a0a621"
+"2241","Race","https://bc.d4k.dk/bc_instance/race","0dbf8b98-79d1-4a11-b3ca-6752a4f55356"

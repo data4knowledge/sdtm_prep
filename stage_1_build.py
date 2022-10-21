@@ -13,11 +13,12 @@ nodes = {
   'ScopedIdentifier': [], 'Namespace': [], 'RegistrationStatus': [], 'RegistrationAuthority': [], 'BiomedicalConceptRef': [] 
 }
 relationships = { 
-  "HAS_DOMAIN": [], "HAS_VARIABLE": [], "USING_BC": [],
+  "HAS_DOMAIN": [], "HAS_VARIABLE": [], "USING_BC": [], "BC_RESTRICTION": [],
   "IDENTIFIED_BY": [], "HAS_STATUS": [], "SCOPED_BY": [], "MANAGED_BY": [],
 }
 
 bc_domain_map = {}
+bc_variable_map = {}
 bc_set = {}
 
 delete_dir("load_data")
@@ -32,12 +33,23 @@ with open("source_data//bc_crm.yaml") as file:
       domain = item['domain']
       if not domain in bc_domain_map:
         bc_domain_map[domain] = []
+      if not domain in bc_variable_map:
+        bc_variable_map[domain] = {}
       for name in item["bcs"]:
         bc = bc_service.biomedical_concept(name)
         bc_domain_map[domain].append(name)
         bc_set[name] = bc['items'][0]['uri']
+      for variable in item["variables"]:
+        bc_name = variable['bc']
+        variable_name = variable['name']
+        if bc_name in bc_set:
+          bc_variable_map[domain][variable_name] = bc_name
+        else:
+          print("***** Missing BC reference %s for %s *****" % (bc_name, variable_name))
+
     #elif "class" in item:
 print("BC DOMAIN MAP:", bc_domain_map)
+print("BC VARIABLE MAP:", bc_variable_map)
 print("BC SET:", bc_set)
 for name, uri in bc_set.items():
   nodes["BiomedicalConceptRef"].append({"name": name, "uri_reference": uri, "uuid": uuid4() })
@@ -99,13 +111,13 @@ for ds in ig_body['_links']['datasets']:
     relationships["HAS_DOMAIN"].append({"from": ig_uri, "to": domain_uri})
     for item in ds_body['datasetVariables']:
       try:
+        variable_name = item['name']
         variable_uri = extend_uri(domain_uri, item['name'])
         record = { 
           'uri': variable_uri,
           'uuid': uuid4(),
           'label': item['label'], 
-          'name': item['name'], 
-          #'structure': ds_body['datasetStructure'], 
+          'name': variable_name, 
           'ordinal': int(item['ordinal']),
           'description': item['description'],
           'data_type': item['simpleDatatype'], 
@@ -123,7 +135,12 @@ for ds in ig_body['_links']['datasets']:
           cl = ct_service.get_cl(identifier)
           record['code_list'] = identifier
           record['code_list_uri'] = cl['uri']
-
+        if domain in bc_variable_map:
+          if variable_name in bc_variable_map[domain]:
+            bc_name = bc_variable_map[domain][variable_name]
+            if bc_name in bc_set:
+              uri = bc_set[bc_name]
+              relationships["BC_RESTRICTION"].append({"from": variable_uri, "to": uri})
         nodes["Variable"].append(record)
         relationships["HAS_VARIABLE"].append({"from": domain_uri, "to": variable_uri})
 

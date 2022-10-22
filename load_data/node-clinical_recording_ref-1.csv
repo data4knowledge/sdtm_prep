@@ -1,0 +1,5 @@
+"id:ID","name","uri_reference","uuid"
+"2242","RESULT.quantity.value","https://crm.d4k.dk/dataset/observation/observation_result/result/quantity/value","2a1dc265-ad2a-41f2-8ec7-0beefb53859f"
+"2243","RESULT.quantity.unit","https://crm.d4k.dk/dataset/observation/observation_result/result/quantity/unit","fb57f1d9-f42f-4f8a-8b56-03bab0ab43ce"
+"2244","RESULT.coding.code","https://crm.d4k.dk/dataset/observation/observation_result/result/coding/code","295860b2-1798-4293-9e29-aac55f93eaf5"
+"2245","DATE TIME.date_time.value","https://crm.d4k.dk/dataset/common/date_time/date_time/value","982217fd-6891-472a-b0b0-78776480f05a"

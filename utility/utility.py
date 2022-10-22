@@ -76,9 +76,6 @@ def write_relationships(the_data, csv_filename, id_field="id:ID"):
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, lineterminator="\n")
     writer.writeheader()
     for row in the_data:
-      #print("File:", csv_filename)
-      #print("F:", uri_and_uuid_to_id[row["from"]])
-      #print("T:", uri_and_uuid_to_id[row["to"]])
       new_row = { ":START_ID": uri_and_uuid_to_id[row["from"]], ":END_ID": uri_and_uuid_to_id[row["to"]] }
       writer.writerow(new_row)
 

@@ -10,16 +10,18 @@ import yaml
 
 nodes = { 
   "ImplementationGuide": [], "Domain": [], "Variable": [], 
-  'ScopedIdentifier': [], 'Namespace': [], 'RegistrationStatus': [], 'RegistrationAuthority': [], 'BiomedicalConceptRef': [] 
+  'ScopedIdentifier': [], 'Namespace': [], 'RegistrationStatus': [], 'RegistrationAuthority': [], 'BiomedicalConceptRef': [], 'ClinicalRecordingRef': [] 
 }
 relationships = { 
-  "HAS_DOMAIN": [], "HAS_VARIABLE": [], "USING_BC": [], "BC_RESTRICTION": [],
+  "HAS_DOMAIN": [], "HAS_VARIABLE": [], "USING_BC": [], "BC_RESTRICTION": [], "CLINICAL_RECORDING_REF": [],
   "IDENTIFIED_BY": [], "HAS_STATUS": [], "SCOPED_BY": [], "MANAGED_BY": [],
 }
 
 bc_domain_map = {}
 bc_variable_map = {}
 bc_set = {}
+cr_variable_map = {}
+cr_set = {}
 
 delete_dir("load_data")
 
@@ -37,27 +39,59 @@ with open("source_data//bc_crm.yaml") as file:
         bc_domain_map[domain] = []
       if not domain in bc_variable_map:
         bc_variable_map[domain] = {}
+      if not domain in cr_variable_map:
+        cr_variable_map[domain] = {}
       for name in item["bcs"]:
         bc = bc_service.biomedical_concept(name)
         bc_domain_map[domain].append(name)
         bc_set[name] = bc['items'][0]['uri']
       for variable in item["variables"]:
-        bc_name = variable['bc']
         variable_name = variable['name']
-        if bc_name in bc_set:
-          bc_variable_map[domain][variable_name] = bc_name
-        else:
-          print("***** Missing BC reference %s for %s *****" % (bc_name, variable_name))
+        if "bc" in variable:
+          bc_name = variable['bc']
+          if bc_name in bc_set:
+            bc_variable_map[domain][variable_name] = bc_name
+          else:
+            print("***** Missing BC reference %s for %s *****" % (bc_name, variable_name))
         if "canonical" in variable:
           for ref in variable["canonical"]:
-            uri = crm_service.leaf(ref['node'], ref['data_type'], ref['property'])
-            print("CRM:", uri)
-    #elif "class" in item:
+            key = "%s.%s.%s" % (ref['node'], ref['data_type'], ref['property'])
+            result = crm_service.leaf(ref['node'], ref['data_type'], ref['property'])
+            cr_set[key] = result['uri']
+          if key in cr_set:
+            if not variable_name in cr_variable_map[domain]:
+              cr_variable_map[domain][variable_name] = []
+            cr_variable_map[domain][variable_name].append(key)
+          else:
+            print("***** Missing CR reference %s for %s *****" % (key, variable_name))
+    if "class" in item:
+      klass = item['class']
+      if not klass in cr_variable_map:
+        cr_variable_map[klass] = {}
+      for variable in item["variables"]:
+        variable_name = variable['name']
+        if "canonical" in variable:
+          for ref in variable["canonical"]:
+            key = "%s.%s.%s" % (ref['node'], ref['data_type'], ref['property'])
+            result = crm_service.leaf(ref['node'], ref['data_type'], ref['property'])
+            cr_set[key] = result['uri']
+          if key in cr_set:
+            if not variable_name in cr_variable_map[klass]:
+              cr_variable_map[klass][variable_name] = []
+            cr_variable_map[klass][variable_name].append(key)
+          else:
+            print("***** Missing CR reference %s for %s *****" % (key, variable_name))
+
 print("BC DOMAIN MAP:", bc_domain_map)
 print("BC VARIABLE MAP:", bc_variable_map)
 print("BC SET:", bc_set)
+print("CR VARIABLE MAP:", cr_variable_map)
+print("CR SET:", cr_set)
+
 for name, uri in bc_set.items():
   nodes["BiomedicalConceptRef"].append({"name": name, "uri_reference": uri, "uuid": uuid4() })
+for key, uri in cr_set.items():
+  nodes["ClinicalRecordingRef"].append({"name": key, "uri_reference": uri, "uuid": uuid4() })
 
 # Namespace and RA
 ns_s_json = RaService().namespace_by_name("d4k SDTM namespace")
@@ -91,7 +125,8 @@ for ds in ig_body['_links']['datasets']:
     response = requests.get(api_url, headers=headers)
     ds_body = response.json()
     domain = ds_body['name']
-    print("Domain:", domain)
+    klass = ds_body['_links']['parentClass']['title']
+    print("Domain: %s [%s]" % (domain, klass))
 
     # Process the dataset
     domain_uri = extend_uri(ig_uri, domain)
@@ -101,7 +136,8 @@ for ds in ig_body['_links']['datasets']:
       'label': ds_body['label'], 
       'name': ds_body['name'], 
       'structure': ds_body['datasetStructure'], 
-      'ordinal': ds_body['ordinal'] 
+      'ordinal': ds_body['ordinal'],
+      'class': klass
     }
     if domain in bc_domain_map:
       for bc in bc_domain_map[domain]:
@@ -146,6 +182,21 @@ for ds in ig_body['_links']['datasets']:
             if bc_name in bc_set:
               uri = bc_set[bc_name]
               relationships["BC_RESTRICTION"].append({"from": variable_uri, "to": uri})
+        if domain in cr_variable_map:
+          if variable_name in cr_variable_map[domain]:
+            for key in cr_variable_map[domain][variable_name]:
+              if key in cr_set:
+                uri = cr_set[key]
+                relationships["CLINICAL_RECORDING_REF"].append({"from": variable_uri, "to": uri})
+        if klass in cr_variable_map:
+          generic_variable_name = variable_name.replace(domain, "--")
+          print("NAME %s -> %s" % (variable_name, generic_variable_name))
+          if generic_variable_name in cr_variable_map[klass]:
+            for key in cr_variable_map[klass][generic_variable_name]:
+              if key in cr_set:
+                uri = cr_set[key]
+                relationships["CLINICAL_RECORDING_REF"].append({"from": variable_uri, "to": uri})
+                print("Linking %s to %s" % (variable_uri, uri))
         nodes["Variable"].append(record)
         relationships["HAS_VARIABLE"].append({"from": domain_uri, "to": variable_uri})
 

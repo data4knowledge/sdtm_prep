@@ -28,11 +28,12 @@ delete_dir("load_data")
 bc_service = BCService()
 crm_service = CRMService()
 
+print("Processing BCs and CR links ...")
 with open("source_data//bc_crm.yaml") as file:
   root = yaml.load(file, Loader=yaml.FullLoader)
-  print("ROOT:", root)
+  #print("ROOT:", root)
   for item in root["root"]:
-    print("ITEM:", item)
+    #print("ITEM:", item)
     if "domain" in item:
       domain = item['domain']
       if not domain in bc_domain_map:
@@ -82,16 +83,13 @@ with open("source_data//bc_crm.yaml") as file:
           else:
             print("***** Missing CR reference %s for %s *****" % (key, variable_name))
 
-print("BC DOMAIN MAP:", bc_domain_map)
-print("BC VARIABLE MAP:", bc_variable_map)
-print("BC SET:", bc_set)
-print("CR VARIABLE MAP:", cr_variable_map)
-print("CR SET:", cr_set)
-
 for name, uri in bc_set.items():
   nodes["BiomedicalConceptRef"].append({"name": name, "uri_reference": uri, "uuid": uuid4() })
 for key, uri in cr_set.items():
   nodes["ClinicalRecordingRef"].append({"name": key, "uri_reference": uri, "uuid": uuid4() })
+
+# SDTM IG Processing
+print("Processing SDTM IG ...")
 
 # Namespace and RA
 ns_s_json = RaService().namespace_by_name("d4k SDTM namespace")
@@ -111,7 +109,7 @@ ig_body = response.json()
 
 # Process IG
 base_uri = ns_s_json['value']
-print("BASE_URI", base_uri)
+#print("BASE_URI", base_uri)
 ig_uri = extend_uri(base_uri, "ig")
 nodes["ImplementationGuide"].append({"name": ig_body['label'], "uri": ig_uri, "uuid": uuid4() })
 add_identifier_and_status(ig_uri, "SDTM IG", "2022-09-01", ns_s_json['uri'], ra_s_json['uri'], nodes, relationships)
@@ -189,14 +187,15 @@ for ds in ig_body['_links']['datasets']:
                 uri = cr_set[key]
                 relationships["CLINICAL_RECORDING_REF"].append({"from": variable_uri, "to": uri})
         if klass in cr_variable_map:
-          generic_variable_name = variable_name.replace(domain, "--")
-          print("NAME %s -> %s" % (variable_name, generic_variable_name))
-          if generic_variable_name in cr_variable_map[klass]:
-            for key in cr_variable_map[klass][generic_variable_name]:
-              if key in cr_set:
-                uri = cr_set[key]
-                relationships["CLINICAL_RECORDING_REF"].append({"from": variable_uri, "to": uri})
-                print("Linking %s to %s" % (variable_uri, uri))
+          if variable_name[:2] == domain:
+            generic_variable_name = variable_name.replace(domain, "--", 1)
+            #print("NAME %s -> %s" % (variable_name, generic_variable_name))
+            if generic_variable_name in cr_variable_map[klass]:
+              for key in cr_variable_map[klass][generic_variable_name]:
+                if key in cr_set:
+                  uri = cr_set[key]
+                  relationships["CLINICAL_RECORDING_REF"].append({"from": variable_uri, "to": uri})
+                  #print("Linking %s to %s" % (variable_uri, uri))
         nodes["Variable"].append(record)
         relationships["HAS_VARIABLE"].append({"from": domain_uri, "to": variable_uri})
 
@@ -218,3 +217,5 @@ for k, v in relationships.items():
   csv_filename = "load_data/relationship-%s-1.csv" % (k.lower())
   write_relationships(v, csv_filename)
 
+# Complete
+print("Complete")

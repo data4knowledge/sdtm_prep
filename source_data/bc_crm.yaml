@@ -1,5 +1,21 @@
 ---
 root:
+- domain: "VS"
+  bcs:
+  - "Height"
+  - "Weight"
+  - "Temperature"
+  - "Liver Size"
+  - "Spleen Size"
+  variables: []
+- domain: "LB"
+  bcs:
+  - Hematocrit
+  - Plasmodium
+  - "Plasmodium vivax, Asexual"
+  - "Plasmodium vivax, Sexual"
+  - "Plasmodium flciparum, Asexual"
+  variables: []
 - domain: "DM"
   bcs:
   - "Age"

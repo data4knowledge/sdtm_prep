@@ -44,8 +44,11 @@ with open("source_data//bc_crm.yaml") as file:
         cr_variable_map[domain] = {}
       for name in item["bcs"]:
         bc = bc_service.biomedical_concept(name)
-        bc_domain_map[domain].append(name)
-        bc_set[name] = bc['items'][0]['uri']
+        for bc_item in bc['items']:
+          if bc_item['name'] == name:
+            print("BC linked:", name)
+            bc_domain_map[domain].append(name)
+            bc_set[name] = bc_item['uri']
       for variable in item["variables"]:
         variable_name = variable['name']
         if "bc" in variable:

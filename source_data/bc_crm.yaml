@@ -7,6 +7,9 @@ root:
   - "Temperature"
   - "Liver Size"
   - "Spleen Size"
+  - EVI
+  - NLN
+  - SES
   variables: []
 - domain: "LB"
   bcs:

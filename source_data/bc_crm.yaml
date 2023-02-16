@@ -11,10 +11,13 @@ root:
 - domain: "LB"
   bcs:
   - Hematocrit
+  - Hemoglobin
   - Plasmodium
   - "Plasmodium vivax, Asexual"
   - "Plasmodium vivax, Sexual"
   - "Plasmodium flciparum, Asexual"
+  - Anemia
+  - "Malaria RDT"
   variables: []
 - domain: "DM"
   bcs:

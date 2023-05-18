@@ -12,15 +12,14 @@ class ServiceEnvironment():
     else:
       return "development"
 
+  def production(self):
+    return self.environment() == "production"
+
   def get(self, name):
-    full_name = self.build_full_name(name)
-    if full_name in os.environ:
-      return os.environ[full_name]
+    if name in os.environ:
+      return os.environ[name]
     else:
       return ""
-
-  def build_full_name(self, name):
-    return "%s_%s" % (self.environment().upper(), name)
 
   def load(self):
     load_dotenv(".%s_env" % self.environment())

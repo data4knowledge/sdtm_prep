@@ -5,7 +5,6 @@ from stringcase import pascalcase, snakecase
 from utility.service_environment import ServiceEnvironment
 
 def file_load(driver, database, sv):
-  print("ENV", sv.production())
   if sv.production():
     project_root = sv.get("GITHUB")
   else:

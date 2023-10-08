@@ -74,6 +74,16 @@ root:
     - node: "RESULT"
       data_type: "quantity"
       property: "unit"
+  - name: "--SPEC"
+    canonical: 
+    - node: "SPECIMEN TYPE"
+      data_type: "coding"
+      property: "code"
+  - name: "--METHOD"
+    canonical: 
+    - node: "METHOD"
+      data_type: "coding"
+      property: "code"
   - name: "--DTC"
     canonical: 
     - node: "DATE TIME"

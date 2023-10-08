@@ -12,6 +12,7 @@ class CTService():
   def api_get(self, url):
     headers =  {"Content-Type":"application/json"}
     full_url = "%s%s" % (self.__api_url, url)
+    #print(f"CT_SERVICE: {full_url}")
     response = requests.get(full_url, headers=headers)
     if response.status_code == 200:
       return response.json()

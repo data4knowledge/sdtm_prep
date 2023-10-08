@@ -74,22 +74,14 @@ with open("source_data//bc_crm.yaml") as file:
         cr_variable_map[klass] = {}
       for variable in item["variables"]:
         variable_name = variable['name']
-        print("A")
         if "canonical" in variable:
-          print("B")
           for ref in variable["canonical"]:
             key = "%s.%s.%s" % (ref['node'], ref['data_type'], ref['property'])
             result = crm_service.leaf(ref['node'], ref['data_type'], ref['property'])
             cr_set[key] = result['uri']
-            print("C", key)
-          #print("C2", cr_set)
-          #if key in cr_set:
             if not variable_name in cr_variable_map[klass]:
               cr_variable_map[klass][variable_name] = []
             cr_variable_map[klass][variable_name].append(key)
-            print("D", cr_variable_map[klass])
-          #else:
-          #  print("***** Missing CR reference %s for %s *****" % (key, variable_name))
 
 for name, uri in bc_set.items():
   nodes["BiomedicalConceptRef"].append({"name": name, "uri_reference": uri, "uuid": uuid4() })
@@ -180,6 +172,7 @@ for ds in ig_body['_links']['datasets']:
           parts = item['_links']['codelist'][0]['href'].split('/')
           identifier = parts[-1]
           cl = ct_service.get_cl(identifier)
+          #print(f"CT: {identifier} {cl}")
           record['code_list'] = identifier
           record['code_list_uri'] = cl['uri']
         if domain in bc_variable_map:
